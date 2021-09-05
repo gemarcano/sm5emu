@@ -5,23 +5,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef uint8_t u8;
-
-int debugger(u8 op, u8 arg);
-void decode(u8 op, u8 arg);
+int debugger(uint8_t op, uint8_t arg);
+void decode(uint8_t op, uint8_t arg);
 void save_state(void);
 void restore_state(void);
 
 // ROM
-u8 ROM[0x10][0x40];
+uint8_t ROM[0x10][0x40];
 #define FETCH(X) do { (X) = ROM[pc.page][pc.addr]; ++pc.addr; } while (0)
 
-u8 RAM[0x100]; // A-series chips have 2x the RAM of non-A chips
-u8 REG[0x10];
+uint8_t RAM[0x100]; // A-series chips have 2x the RAM of non-A chips
+uint8_t REG[0x10];
 
 typedef struct _pc_t {
-    u8 page;
-    u8 addr;
+    uint8_t page;
+    uint8_t addr;
 } pc_t;
 
 pc_t pc = { 0, 0 };
@@ -30,10 +28,10 @@ pc_t stack[4] = { { 0, }, };
 unsigned sp = 0;
 int interrupt = 0;
 
-u8 A = 0, X = 0;
-u8 BL = 0, BM = 0, SB = 0;
+uint8_t A = 0, X = 0;
+uint8_t BL = 0, BM = 0, SB = 0;
 #define B ((BM << 4) | BL)
-u8 C = 0;
+uint8_t C = 0;
 int skip = 0;
 int port[3] = { 0, 0, 0 };
 int port2_hiz = 1;
@@ -46,8 +44,8 @@ int do_break = 0;
 pc_t breakpoint = { 0, 0 };
 
 int mem_break = 0;
-u8 mem_break_addr = 0;
-u8 mem_break_end = 0;
+uint8_t mem_break_addr = 0;
+uint8_t mem_break_end = 0;
 int hiz_break = 0;
 
 // input data
@@ -61,7 +59,7 @@ typedef struct _sample_t {
 sample_t sample[100];
 unsigned total_samples = 0;
 
-static void hexdump(u8 *ptr, unsigned len) {
+static void hexdump(uint8_t *ptr, unsigned len) {
     printf("   ");
     for (unsigned i = 0; i < 16; ++i)
         printf("%x ", i);
@@ -86,16 +84,16 @@ static void hexdump(u8 *ptr, unsigned len) {
 //////////////////
 // address control
 
-void op_TR(u8 op, u8 /*arg*/) {
+void op_TR(uint8_t op, uint8_t /*arg*/) {
     pc.addr = op & 0b111111;
 }
 
-void op_TL(u8 op, u8 arg) {
+void op_TL(uint8_t op, uint8_t arg) {
     pc.page = ((op & 0xf) << 2) | (arg >> 6);
     pc.addr = arg & 0b111111;
 }
 
-void op_TRS(u8 op, u8 /*arg*/) {
+void op_TRS(uint8_t op, uint8_t /*arg*/) {
     if (sp == 4) {
         printf("overflow!\n");
         exit(1);
@@ -106,7 +104,7 @@ void op_TRS(u8 op, u8 /*arg*/) {
     pc.addr = (op & 0b11111) << 1;
 }
 
-void op_CALL(u8 op, u8 arg) {
+void op_CALL(uint8_t op, uint8_t arg) {
     if (sp == 4) {
         printf("overflow!\n");
         exit(1);
@@ -117,7 +115,7 @@ void op_CALL(u8 op, u8 arg) {
     pc.addr = arg & 0b111111;
 }
 
-void op_RTN(u8 /*op*/, u8 /*arg*/) {
+void op_RTN(uint8_t /*op*/, uint8_t /*arg*/) {
     if (sp == 0) {
         printf("underflow!\n");
         exit(1);
@@ -126,7 +124,7 @@ void op_RTN(u8 /*op*/, u8 /*arg*/) {
     pc = stack[sp];
 }
 
-void op_RTNS(u8 op, u8 arg) {
+void op_RTNS(uint8_t op, uint8_t arg) {
     op_RTN(op, arg);
     skip = 1;
 }
@@ -135,33 +133,33 @@ void op_RTNS(u8 op, u8 arg) {
 ////////////////
 // data transfer
 
-void op_LAX(u8 op, u8 /*arg*/) {
+void op_LAX(uint8_t op, uint8_t /*arg*/) {
     A = op & 0b1111;
 }
 
-void op_LBMX(u8 op, u8 /*arg*/) {
+void op_LBMX(uint8_t op, uint8_t /*arg*/) {
     BM = op & 0b1111;
 }
 
-void op_LBLX(u8 op, u8 /*arg*/) {
+void op_LBLX(uint8_t op, uint8_t /*arg*/) {
     BL = op & 0b1111;
 }
 
-void op_LDA(u8 op, u8 /*arg*/) {
+void op_LDA(uint8_t op, uint8_t /*arg*/) {
     A = RAM[B];
     BM ^= op & 0b11;
 }
 
-void op_EXC(u8 op, u8 /*arg*/) {
-    u8 tmp = RAM[B];
+void op_EXC(uint8_t op, uint8_t /*arg*/) {
+    uint8_t tmp = RAM[B];
 
     RAM[B] = A;
     A = tmp;
     BM ^= op & 0b11;
 }
 
-void op_EXCI(u8 op, u8 /*arg*/) {
-    u8 tmp = RAM[B];
+void op_EXCI(uint8_t op, uint8_t /*arg*/) {
+    uint8_t tmp = RAM[B];
 
     RAM[B] = A;
     A = tmp;
@@ -174,8 +172,8 @@ void op_EXCI(u8 op, u8 /*arg*/) {
     BM ^= op & 0b11;
 }
 
-void op_EXCD(u8 op, u8 /*arg*/) {
-    u8 tmp = RAM[B];
+void op_EXCD(uint8_t op, uint8_t /*arg*/) {
+    uint8_t tmp = RAM[B];
 
     RAM[B] = A;
     A = tmp;
@@ -188,30 +186,30 @@ void op_EXCD(u8 op, u8 /*arg*/) {
     BM ^= op & 0b11;
 }
 
-void op_EXAX(u8 /*op*/, u8 /*arg*/) {
-    u8 tmp = X;
+void op_EXAX(uint8_t /*op*/, uint8_t /*arg*/) {
+    uint8_t tmp = X;
     X = A;
     A = tmp;
 }
 
-void op_ATX(u8 /*op*/, u8 /*arg*/) {
+void op_ATX(uint8_t /*op*/, uint8_t /*arg*/) {
     X = A;
 }
 
-void op_EXBM(u8 /*op*/, u8 /*arg*/) {
-    u8 tmp = A;
+void op_EXBM(uint8_t /*op*/, uint8_t /*arg*/) {
+    uint8_t tmp = A;
     A = BM;
     BM = tmp;
 }
 
-void op_EXBL(u8 /*op*/, u8 /*arg*/) {
-    u8 tmp = A;
+void op_EXBL(uint8_t /*op*/, uint8_t /*arg*/) {
+    uint8_t tmp = A;
     A = BL;
     BL = tmp;
 }
 
-void op_EX(u8 /*op*/, u8 /*arg*/) {
-    u8 tmp = SB;
+void op_EX(uint8_t /*op*/, uint8_t /*arg*/) {
+    uint8_t tmp = SB;
     SB = B;
     BM = tmp >> 4;
     BL = tmp & 0xf;
@@ -221,7 +219,7 @@ void op_EX(u8 /*op*/, u8 /*arg*/) {
 /////////////
 // arithmetic
 
-void op_ADX(u8 op, u8 /*arg*/) {
+void op_ADX(uint8_t op, uint8_t /*arg*/) {
     A = A + (op & 0b1111);
     if (A >= 0x10) {
         A %= 0x10;
@@ -229,11 +227,11 @@ void op_ADX(u8 op, u8 /*arg*/) {
     }
 }
 
-void op_ADD(u8 /*op*/, u8 /*arg*/) {
+void op_ADD(uint8_t /*op*/, uint8_t /*arg*/) {
     A = (A + RAM[B]) % 0x10;
 }
 
-void op_ADC(u8 /*op*/, u8 /*arg*/) {
+void op_ADC(uint8_t /*op*/, uint8_t /*arg*/) {
     A = A + RAM[B] + C;
     if (A >= 0x10) {
         A %= 0x10;
@@ -244,11 +242,11 @@ void op_ADC(u8 /*op*/, u8 /*arg*/) {
     }
 }
 
-void op_COMA(u8 /*op*/, u8 /*arg*/) {
+void op_COMA(uint8_t /*op*/, uint8_t /*arg*/) {
     A = (~A) & 0xf;
 }
 
-void op_INCB(u8 /*op*/, u8 /*arg*/) {
+void op_INCB(uint8_t /*op*/, uint8_t /*arg*/) {
     ++BL;
     if (BL == 0x10) {
         BL = 0;
@@ -256,7 +254,7 @@ void op_INCB(u8 /*op*/, u8 /*arg*/) {
     }
 }
 
-void op_DECB(u8 /*op*/, u8 /*arg*/) {
+void op_DECB(uint8_t /*op*/, uint8_t /*arg*/) {
     --BL;
     if (BL == 0xFF) {
         BL = 0xF;
@@ -268,28 +266,28 @@ void op_DECB(u8 /*op*/, u8 /*arg*/) {
 ///////
 // test
 
-void op_TC(u8 /*op*/, u8 /*arg*/) {
+void op_TC(uint8_t /*op*/, uint8_t /*arg*/) {
     if (C)
         skip = 1;
 }
 
-void op_TAM(u8 /*op*/, u8 /*arg*/) {
+void op_TAM(uint8_t /*op*/, uint8_t /*arg*/) {
     if (A == RAM[B])
         skip = 1;
 }
 
-void op_TM(u8 op, u8 /*arg*/) {
+void op_TM(uint8_t op, uint8_t /*arg*/) {
     if (RAM[B] & (1 << (op & 0b11)))
         skip = 1;
 }
 
-void op_TABL(u8 /*op*/, u8 /*arg*/) {
+void op_TABL(uint8_t /*op*/, uint8_t /*arg*/) {
     if (A == BL)
         skip = 1;
 }
 
-void op_TPB(u8 op, u8 /*arg*/) {
-    u8 num = op & 0b11;
+void op_TPB(uint8_t op, uint8_t /*arg*/) {
+    uint8_t num = op & 0b11;
 
     printf("%8u checking port %d [%d]\n", cycle, num, port[num]);
 
@@ -319,29 +317,29 @@ void op_TPB(u8 op, u8 /*arg*/) {
 ///////////////////
 // bit manipulation
 
-void op_RM(u8 op, u8 /*arg*/) {
-    u8 mask = 1 << (op & 0b11);
+void op_RM(uint8_t op, uint8_t /*arg*/) {
+    uint8_t mask = 1 << (op & 0b11);
     RAM[B] &= ~mask;
 }
 
-void op_SM(u8 op, u8 /*arg*/) {
-    u8 mask = 1 << (op & 0b11);
+void op_SM(uint8_t op, uint8_t /*arg*/) {
+    uint8_t mask = 1 << (op & 0b11);
     RAM[B] |= mask;
 }
 
-void op_SC(u8 /*op*/, u8 /*arg*/) {
+void op_SC(uint8_t /*op*/, uint8_t /*arg*/) {
     C = 1;
 }
 
-void op_RC(u8 /*op*/, u8 /*arg*/) {
+void op_RC(uint8_t /*op*/, uint8_t /*arg*/) {
     C = 0;
 }
 
-void op_ID(u8 /*op*/, u8 /*arg*/) {
+void op_ID(uint8_t /*op*/, uint8_t /*arg*/) {
     // TODO
 }
 
-void op_IE(u8 /*op*/, u8 /*arg*/) {
+void op_IE(uint8_t /*op*/, uint8_t /*arg*/) {
     // TODO
 }
 
@@ -349,11 +347,11 @@ void op_IE(u8 /*op*/, u8 /*arg*/) {
 /////////////
 // IO control
 
-void op_OUTL(u8 /*op*/, u8 /*arg*/) {
+void op_OUTL(uint8_t /*op*/, uint8_t /*arg*/) {
     printf("setting port0 to %x\n", A);
 }
 
-void op_OUT(u8 /*op*/, u8 /*arg*/) {
+void op_OUT(uint8_t /*op*/, uint8_t /*arg*/) {
     REG[BL] = A;
     if (BL == 0xf) {
         port2_hiz = A ? 0 : 1;
@@ -371,9 +369,9 @@ void op_OUT(u8 /*op*/, u8 /*arg*/) {
 // others
 
 // load from ROM
-void op_PAT(u8 /*op*/, u8 /*arg*/) {
+void op_PAT(uint8_t /*op*/, uint8_t /*arg*/) {
     pc_t load;
-    u8 romval;
+    uint8_t romval;
 
     load.page = 4;
     load.addr = ((X & 0b11) << 4) | A;
@@ -384,9 +382,9 @@ void op_PAT(u8 /*op*/, u8 /*arg*/) {
 }
 
 // read from secret ROM
-void op_DTA(u8 /*op*/, u8 /*arg*/) {
-    static u8 secret[8] = { 0xFC, 0xFC, 0xA5, 0x6C, 0x03, 0x8F, 0x1B, 0x9A };
-    u8 offset, BL_t;
+void op_DTA(uint8_t /*op*/, uint8_t /*arg*/) {
+    static uint8_t secret[8] = { 0xFC, 0xFC, 0xA5, 0x6C, 0x03, 0x8F, 0x1B, 0x9A };
+    uint8_t offset, BL_t;
 
     if (BM >= 4 && BM <= 7) {
         offset = (BM - 4) * 2;
@@ -402,20 +400,20 @@ void op_DTA(u8 /*op*/, u8 /*arg*/) {
 }
 
 // halt
-void op_HALT(u8 /*op*/, u8 /*arg*/) {
+void op_HALT(uint8_t /*op*/, uint8_t /*arg*/) {
     printf("Halted\n");
     run = 0;
 }
 
 
-typedef void (*op_handler_t)(u8 op, u8 arg);
+typedef void (*op_handler_t)(uint8_t op, uint8_t arg);
 
-void op_NOP(u8 /*op*/, u8 /*arg*/) {
+void op_NOP(uint8_t /*op*/, uint8_t /*arg*/) {
     // do nuttin
 }
 
 void emulate(void) {
-    u8 op = 0, arg = 0;
+    uint8_t op = 0, arg = 0;
     op_handler_t handler = op_NOP;
     int execute = 1;
 
@@ -581,7 +579,7 @@ void emulate(void) {
 
 
 
-int debugger(u8 op, u8 arg) {
+int debugger(uint8_t op, uint8_t arg) {
     char buf[4096];
     char *tokens[16], *token;
     int num = 0;
@@ -735,7 +733,7 @@ int debugger(u8 op, u8 arg) {
     return 1;
 }
 
-void decode(u8 op, u8 arg) {
+void decode(uint8_t op, uint8_t arg) {
     // NOP
     if (op == 0x00) {
         printf("nop\n");
