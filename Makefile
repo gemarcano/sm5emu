@@ -1,7 +1,7 @@
 PROG = sm5emu
 OBJS = emu.o
 
-CFLAGS=-g -Wall -Werror
+CFLAGS=-g -Wall -Werror -Wextra -pedantic -std=c2x
 
 all: $(PROG)
 

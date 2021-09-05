@@ -62,15 +62,13 @@ sample_t sample[100];
 unsigned total_samples = 0;
 
 static void hexdump(u8 *ptr, unsigned len) {
-    int i;
-
     printf("   ");
-    for (i = 0; i < 16; ++i)
+    for (unsigned i = 0; i < 16; ++i)
         printf("%x ", i);
     printf("\n");
     printf("   -------------------------------\n");
 
-    for (i = 0; i < len; ++i) {
+    for (unsigned i = 0; i < len; ++i) {
         if ((i & 15) == 0)
             printf("%x: ", i / 16);
         printf("%x ", ptr[i]);
@@ -88,7 +86,7 @@ static void hexdump(u8 *ptr, unsigned len) {
 //////////////////
 // address control
 
-void op_TR(u8 op, u8 arg) {
+void op_TR(u8 op, u8 /*arg*/) {
     pc.addr = op & 0b111111;
 }
 
@@ -97,7 +95,7 @@ void op_TL(u8 op, u8 arg) {
     pc.addr = arg & 0b111111;
 }
 
-void op_TRS(u8 op, u8 arg) {
+void op_TRS(u8 op, u8 /*arg*/) {
     if (sp == 4) {
         printf("overflow!\n");
         exit(1);
@@ -119,7 +117,7 @@ void op_CALL(u8 op, u8 arg) {
     pc.addr = arg & 0b111111;
 }
 
-void op_RTN(u8 op, u8 arg) {
+void op_RTN(u8 /*op*/, u8 /*arg*/) {
     if (sp == 0) {
         printf("underflow!\n");
         exit(1);
@@ -137,24 +135,24 @@ void op_RTNS(u8 op, u8 arg) {
 ////////////////
 // data transfer
 
-void op_LAX(u8 op, u8 arg) {
+void op_LAX(u8 op, u8 /*arg*/) {
     A = op & 0b1111;
 }
 
-void op_LBMX(u8 op, u8 arg) {
+void op_LBMX(u8 op, u8 /*arg*/) {
     BM = op & 0b1111;
 }
 
-void op_LBLX(u8 op, u8 arg) {
+void op_LBLX(u8 op, u8 /*arg*/) {
     BL = op & 0b1111;
 }
 
-void op_LDA(u8 op, u8 arg) {
+void op_LDA(u8 op, u8 /*arg*/) {
     A = RAM[B];
     BM ^= op & 0b11;
 }
 
-void op_EXC(u8 op, u8 arg) {
+void op_EXC(u8 op, u8 /*arg*/) {
     u8 tmp = RAM[B];
 
     RAM[B] = A;
@@ -162,7 +160,7 @@ void op_EXC(u8 op, u8 arg) {
     BM ^= op & 0b11;
 }
 
-void op_EXCI(u8 op, u8 arg) {
+void op_EXCI(u8 op, u8 /*arg*/) {
     u8 tmp = RAM[B];
 
     RAM[B] = A;
@@ -176,7 +174,7 @@ void op_EXCI(u8 op, u8 arg) {
     BM ^= op & 0b11;
 }
 
-void op_EXCD(u8 op, u8 arg) {
+void op_EXCD(u8 op, u8 /*arg*/) {
     u8 tmp = RAM[B];
 
     RAM[B] = A;
@@ -190,29 +188,29 @@ void op_EXCD(u8 op, u8 arg) {
     BM ^= op & 0b11;
 }
 
-void op_EXAX(u8 op, u8 arg) {
+void op_EXAX(u8 /*op*/, u8 /*arg*/) {
     u8 tmp = X;
     X = A;
     A = tmp;
 }
 
-void op_ATX(u8 op, u8 arg) {
+void op_ATX(u8 /*op*/, u8 /*arg*/) {
     X = A;
 }
 
-void op_EXBM(u8 op, u8 arg) {
+void op_EXBM(u8 /*op*/, u8 /*arg*/) {
     u8 tmp = A;
     A = BM;
     BM = tmp;
 }
 
-void op_EXBL(u8 op, u8 arg) {
+void op_EXBL(u8 /*op*/, u8 /*arg*/) {
     u8 tmp = A;
     A = BL;
     BL = tmp;
 }
 
-void op_EX(u8 op, u8 arg) {
+void op_EX(u8 /*op*/, u8 /*arg*/) {
     u8 tmp = SB;
     SB = B;
     BM = tmp >> 4;
@@ -223,7 +221,7 @@ void op_EX(u8 op, u8 arg) {
 /////////////
 // arithmetic
 
-void op_ADX(u8 op, u8 arg) {
+void op_ADX(u8 op, u8 /*arg*/) {
     A = A + (op & 0b1111);
     if (A >= 0x10) {
         A %= 0x10;
@@ -231,11 +229,11 @@ void op_ADX(u8 op, u8 arg) {
     }
 }
 
-void op_ADD(u8 op, u8 arg) {
+void op_ADD(u8 /*op*/, u8 /*arg*/) {
     A = (A + RAM[B]) % 0x10;
 }
 
-void op_ADC(u8 op, u8 arg) {
+void op_ADC(u8 /*op*/, u8 /*arg*/) {
     A = A + RAM[B] + C;
     if (A >= 0x10) {
         A %= 0x10;
@@ -246,11 +244,11 @@ void op_ADC(u8 op, u8 arg) {
     }
 }
 
-void op_COMA(u8 op, u8 arg) {
+void op_COMA(u8 /*op*/, u8 /*arg*/) {
     A = (~A) & 0xf;
 }
 
-void op_INCB(u8 op, u8 arg) {
+void op_INCB(u8 /*op*/, u8 /*arg*/) {
     ++BL;
     if (BL == 0x10) {
         BL = 0;
@@ -258,7 +256,7 @@ void op_INCB(u8 op, u8 arg) {
     }
 }
 
-void op_DECB(u8 op, u8 arg) {
+void op_DECB(u8 /*op*/, u8 /*arg*/) {
     --BL;
     if (BL == 0xFF) {
         BL = 0xF;
@@ -270,34 +268,34 @@ void op_DECB(u8 op, u8 arg) {
 ///////
 // test
 
-void op_TC(u8 op, u8 arg) {
+void op_TC(u8 /*op*/, u8 /*arg*/) {
     if (C)
         skip = 1;
 }
 
-void op_TAM(u8 op, u8 arg) {
+void op_TAM(u8 /*op*/, u8 /*arg*/) {
     if (A == RAM[B])
         skip = 1;
 }
 
-void op_TM(u8 op, u8 arg) {
+void op_TM(u8 op, u8 /*arg*/) {
     if (RAM[B] & (1 << (op & 0b11)))
         skip = 1;
 }
 
-void op_TABL(u8 op, u8 arg) {
+void op_TABL(u8 /*op*/, u8 /*arg*/) {
     if (A == BL)
         skip = 1;
 }
 
-void op_TPB(u8 op, u8 arg) {
+void op_TPB(u8 op, u8 /*arg*/) {
     u8 num = op & 0b11;
 
     printf("%8u checking port %d [%d]\n", cycle, num, port[num]);
 
     if (num == 1) {
         if (have_data) {
-            int i;
+            unsigned i;
             for (i = 0; i < total_samples-1; ++i)
                 if (sample[i+1].ts > cycle)
                     break;
@@ -321,29 +319,29 @@ void op_TPB(u8 op, u8 arg) {
 ///////////////////
 // bit manipulation
 
-void op_RM(u8 op, u8 arg) {
+void op_RM(u8 op, u8 /*arg*/) {
     u8 mask = 1 << (op & 0b11);
     RAM[B] &= ~mask;
 }
 
-void op_SM(u8 op, u8 arg) {
+void op_SM(u8 op, u8 /*arg*/) {
     u8 mask = 1 << (op & 0b11);
     RAM[B] |= mask;
 }
 
-void op_SC(u8 op, u8 arg) {
+void op_SC(u8 /*op*/, u8 /*arg*/) {
     C = 1;
 }
 
-void op_RC(u8 op, u8 arg) {
+void op_RC(u8 /*op*/, u8 /*arg*/) {
     C = 0;
 }
 
-void op_ID(u8 op, u8 arg) {
+void op_ID(u8 /*op*/, u8 /*arg*/) {
     // TODO
 }
 
-void op_IE(u8 op, u8 arg) {
+void op_IE(u8 /*op*/, u8 /*arg*/) {
     // TODO
 }
 
@@ -351,11 +349,11 @@ void op_IE(u8 op, u8 arg) {
 /////////////
 // IO control
 
-void op_OUTL(u8 op, u8 arg) {
+void op_OUTL(u8 /*op*/, u8 /*arg*/) {
     printf("setting port0 to %x\n", A);
 }
 
-void op_OUT(u8 op, u8 arg) {
+void op_OUT(u8 /*op*/, u8 /*arg*/) {
     REG[BL] = A;
     if (BL == 0xf) {
         port2_hiz = A ? 0 : 1;
@@ -373,7 +371,7 @@ void op_OUT(u8 op, u8 arg) {
 // others
 
 // load from ROM
-void op_PAT(u8 op, u8 arg) {
+void op_PAT(u8 /*op*/, u8 /*arg*/) {
     pc_t load;
     u8 romval;
 
@@ -386,7 +384,7 @@ void op_PAT(u8 op, u8 arg) {
 }
 
 // read from secret ROM
-void op_DTA(u8 op, u8 arg) {
+void op_DTA(u8 /*op*/, u8 /*arg*/) {
     static u8 secret[8] = { 0xFC, 0xFC, 0xA5, 0x6C, 0x03, 0x8F, 0x1B, 0x9A };
     u8 offset, BL_t;
 
@@ -404,7 +402,7 @@ void op_DTA(u8 op, u8 arg) {
 }
 
 // halt
-void op_HALT(u8 op, u8 arg) {
+void op_HALT(u8 /*op*/, u8 /*arg*/) {
     printf("Halted\n");
     run = 0;
 }
@@ -412,7 +410,7 @@ void op_HALT(u8 op, u8 arg) {
 
 typedef void (*op_handler_t)(u8 op, u8 arg);
 
-void op_NOP(u8 op, u8 arg) {
+void op_NOP(u8 /*op*/, u8 /*arg*/) {
     // do nuttin
 }
 
@@ -443,7 +441,7 @@ void emulate(void) {
             handler = op_TL;
         } else if (op >= 0xC0 && op <= 0xDF) {
             handler = op_TRS;
-        } else if (op >= 0xF0 && op <= 0xFF) {
+        } else if (op >= 0xF0) {
             FETCH(arg);
             handler = op_CALL;
         } else if (op == 0x7D) {
@@ -482,7 +480,7 @@ void emulate(void) {
         }
 
         // arithmetic
-        else if (op >= 0x00 && op <= 0x0F) {
+        else if (op <= 0x0F) {
             handler = op_ADX;
         } else if (op == 0x7A) {
             handler = op_ADD;
@@ -586,7 +584,7 @@ void emulate(void) {
 int debugger(u8 op, u8 arg) {
     char buf[4096];
     char *tokens[16], *token;
-    int i = 0, num = 0;
+    int num = 0;
 
     while (1) {
         // TODO detect goto self condition and break execution
@@ -632,13 +630,13 @@ int debugger(u8 op, u8 arg) {
         // tokenize
         fgets(buf, 4095, stdin);
         buf[4095] = 0;
-        for (i = 0; buf[i]; ++i)
+        for (int i = 0; buf[i]; ++i)
             if (buf[i] == '\n') {
                 buf[i] = 0;
                 break;
             }
 
-        i = 0;
+        int i = 0;
         token = strtok(buf, " ");
         while (token) {
             tokens[i++] = token;
@@ -692,7 +690,7 @@ int debugger(u8 op, u8 arg) {
         } else if (strcmp(tokens[0], "cb") == 0) {
             do_break = 0;
         } else if (strcmp(tokens[0], "sp") == 0) {
-            for (i = 0; i < sp; ++i)
+            for (unsigned i = 0; i < sp; ++i)
                 printf("  SP[%d] %x.%02x\n", i, stack[i].page, stack[i].addr);
         } else if (strcmp(tokens[0], "mb") == 0) {
             if (num < 2) {
@@ -750,7 +748,7 @@ void decode(u8 op, u8 arg) {
         printf("tl %x.%02x\n", ((op & 0xf) << 2) | (arg >> 6), arg & 0b111111);
     } else if (op >= 0xC0 && op <= 0xDF) {
         printf("trs %x\n", op & 0b11111);
-    } else if (op >= 0xF0 && op <= 0xFF) {
+    } else if (op >= 0xF0) {
         printf("call %x.%02x\n", ((op & 0xf) << 2) | (arg >> 6), arg & 0b111111);
     } else if (op == 0x7D) {
         printf("rtn\n");
@@ -788,7 +786,7 @@ void decode(u8 op, u8 arg) {
     }
 
     // arithmetic
-    else if (op >= 0x00 && op <= 0x0F) {
+    else if (op <= 0x0F) {
         printf("adx %x\n", op & 0b1111);
     } else if (op == 0x7A) {
         printf("add\n");
@@ -928,7 +926,7 @@ void load_data(char *name) {
     fclose(file);
 }
 
-void stop_run(int signum) {
+void stop_run(int /*signum*/) {
     run = 0;
 }
 
